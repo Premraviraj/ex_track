@@ -5,19 +5,565 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Expense Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .card {
+            height: 120px;
+            overflow: hidden;
+        }
+        .card-body {
+            padding: 0.75rem;
+        }
+        .card-title {
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        .card-text {
+            font-size: 1.5rem;
+            margin-bottom: 0;
+        }
+        .goal-item {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .clickable-goal {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        /* Updated goals container styles */
+        .goals-container {
+            background: transparent;
+            border-radius: 15px;
+            padding: 1rem;
+        }
+
+        .goals-header {
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .goals-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1));
+        }
+
+        .goals-header h5 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .goals-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            padding: 0.5rem;
+        }
+
+        .goal-item {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .goal-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .goal-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: linear-gradient(to bottom, #4a90e2, #357abd);
+            border-radius: 2px;
+        }
+
+        .goal-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .goal-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .goal-icon i {
+            font-size: 1.5rem;
+            color: #4a90e2;
+        }
+
+        .goal-title-section {
+            flex: 1;
+        }
+
+        .goal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .goal-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .goal-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .badge-rigid {
+            background: linear-gradient(135deg, #ff6b6b, #ee5253);
+            color: white;
+        }
+
+        .badge-flexible {
+            background: linear-gradient(135deg, #51cf66, #40c057);
+            color: white;
+        }
+
+        .badge-category {
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            color: white;
+        }
+
+        .goal-progress {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .progress-label span {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #6c757d;
+        }
+
+        .progress-percentage {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #4a90e2;
+        }
+
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+            background-color: #e9ecef;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #4a90e2, #357abd);
+            border-radius: 5px;
+            transition: width 1s ease-in-out;
+        }
+
+        .goal-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.2rem;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .detail-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .detail-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .detail-amount {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .detail-amount i {
+            color: #4a90e2;
+        }
+
+        /* Dark mode styles */
+        [data-theme="dark"] .goals-container {
+            background: transparent;
+        }
+
+        [data-theme="dark"] .goal-item {
+            background: #2d3436;
+        }
+
+        [data-theme="dark"] .goal-icon {
+            background: #2d3436;
+        }
+
+        [data-theme="dark"] .goal-title {
+            color: #f5f6fa;
+        }
+
+        [data-theme="dark"] .goal-progress {
+            background: #2d3436;
+        }
+
+        [data-theme="dark"] .progress {
+            background-color: #2d3436;
+        }
+
+        [data-theme="dark"] .goal-details {
+            background: #2d3436;
+        }
+
+        [data-theme="dark"] .detail-label {
+            color: #a4b0be;
+        }
+
+        [data-theme="dark"] .detail-value {
+            color: #f5f6fa;
+        }
+
+        /* Empty state styles */
+        .empty-goals {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-goals i {
+            font-size: 4rem;
+            color: #4a90e2;
+            margin-bottom: 1rem;
+        }
+
+        .empty-goals p {
+            font-size: 1.1rem;
+            color: #6c757d;
+            margin: 0;
+        }
+
+        [data-theme="dark"] .empty-goals {
+            background: #2d3436;
+        }
+
+        [data-theme="dark"] .empty-goals p {
+            color: #a4b0be;
+        }
+
+        /* Enhanced Goal Details Modal Styles */
+        .goal-details-modal .modal-content {
+            border-radius: 20px;
+            border: none;
+            overflow: hidden;
+            transform: scale(0.7);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .goal-details-modal.show .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .goal-details-modal .modal-header {
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .goal-details-modal .modal-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1));
+        }
+
+        .goal-details-modal .modal-body {
+            padding: 2rem;
+            background: #f8f9fa;
+        }
+
+        .prediction-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUp 0.5s ease forwards;
+        }
+
+        .prediction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .prediction-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .prediction-title i {
+            color: #4a90e2;
+            font-size: 1.5rem;
+        }
+
+        .prediction-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: pulse 2s infinite;
+        }
+
+        .prediction-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .prediction-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUp 0.5s ease forwards;
+        }
+
+        .prediction-item:nth-child(1) { animation-delay: 0.1s; }
+        .prediction-item:nth-child(2) { animation-delay: 0.2s; }
+        .prediction-item:nth-child(3) { animation-delay: 0.3s; }
+        .prediction-item:nth-child(4) { animation-delay: 0.4s; }
+
+        .prediction-item-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .prediction-item-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .graph-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUp 0.5s ease forwards 0.5s;
+        }
+
+        .graph-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .graph-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .graph-title i {
+            color: #4a90e2;
+            font-size: 1.5rem;
+        }
+
+        .graph-container {
+            height: 300px;
+            position: relative;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Dark mode styles */
+        [data-theme="dark"] .goal-details-modal .modal-body {
+            background: #1a1a1a;
+        }
+
+        [data-theme="dark"] .prediction-section,
+        [data-theme="dark"] .graph-section {
+            background: #2d3436;
+        }
+
+        [data-theme="dark"] .prediction-item {
+            background: #2d3436;
+        }
+
+        [data-theme="dark"] .prediction-title,
+        [data-theme="dark"] .graph-title {
+            color: #f5f6fa;
+        }
+
+        [data-theme="dark"] .prediction-item-label {
+            color: #a4b0be;
+        }
+
+        [data-theme="dark"] .prediction-item-value {
+            color: #f5f6fa;
+        }
+
+        [data-theme="dark"] .graph-container {
+            background: #2d3436;
+        }
+
+        /* Loading animation */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4a90e2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="#">Expense Tracker</a>
+            <button class="theme-toggle" id="themeToggle">🌙</button>
         </div>
     </nav>
 
     <div class="container mt-4">
         <div class="row">
             <!-- Summary Cards -->
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card mb-4">
                     <div class="card-body">
                         <h5 class="card-title">Total UPI Expenses</h5>
@@ -25,147 +571,127 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">Total Cash Expenses</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title">Total Cash Expenses</h5>
+                            <button class="btn btn-sm btn-outline-primary" onclick="showAddCashExpenseModal()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
                         <h2 class="card-text" id="totalCashExpenses">₹0</h2>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">Total Savings</h5>
-                        <h2 class="card-text" id="totalSavings">₹0</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Next Month Savings</h5>
-                        <h2 class="card-text" id="nextMonthSavings">₹0</h2>
+                        <h5 class="card-title">Financial Goals</h5>
+                        <div class="goal-item">
+                            <h6 class="clickable-goal">Click to achieve something great!</h6>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- LSTM Predictions -->
-        <div class="row">
+        <div class="row mt-4">
             <div class="col-md-12">
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Financial Analysis Menu</h5>
-                            <button class="btn btn-primary" onclick="refreshPredictions()">Refresh Predictions</button>
-                        </div>
-                        
-                        <!-- LSTM Menu Options -->
-                        <div class="row mb-4">
-                            <div class="col-md-12">
-                                <div class="list-group">
-                                    <button class="list-group-item list-group-item-action" onclick="showExpenses('weekly')">
-                                        1. View Expenses (Weekly)
-                                    </button>
-                                    <button class="list-group-item list-group-item-action" onclick="showExpenses('monthly')">
-                                        2. View Expenses (Monthly)
-                                    </button>
-                                    <button class="list-group-item list-group-item-action" onclick="showSavings('weekly')">
-                                        3. View Savings (Weekly)
-                                    </button>
-                                    <button class="list-group-item list-group-item-action" onclick="showSavings('monthly')">
-                                        4. View Savings (Monthly)
-                                    </button>
-                                    <button class="list-group-item list-group-item-action" onclick="showSavingsProjection()">
-                                        5. View Savings Projection
-                                    </button>
-                                    <button class="list-group-item list-group-item-action" onclick="showNextMonthSavings()">
-                                        6. Predict Next Month Estimated Savings
-                                    </button>
-                                    <button class="list-group-item list-group-item-action" onclick="showNextWeekSavings()">
-                                        7. Predict Next Week Estimated Savings
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Graph Display Section -->
-                        <div class="row mb-4">
-                            <div class="col-md-12">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title" id="graphTitle">Select an option to view graph</h5>
-                                        <div class="graph-display-container">
-                                            <div id="graphContainer" class="graph-container">
-                                                <!-- All graphs will be displayed here -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Projection Section -->
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="projectionMonths">Projection Period:</label>
-                                    <select class="form-control" id="projectionMonths">
-                                        <option value="3">3 Months</option>
-                                        <option value="6">6 Months</option>
-                                        <option value="12">12 Months</option>
-                                    </select>
-                                </div>
-                                <button class="btn btn-primary mt-2" onclick="updateProjection()">Update Projection</button>
-                            </div>
-                        </div>
-
-                        <!-- Charts -->
-                        <div class="row">
-            <div class="col-md-6">
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Expense Categories</h5>
-                        <canvas id="categoryChart"></canvas>
+                <div class="goals-container">
+                    <div class="goals-header">
+                        <h5><i class="fas fa-bullseye"></i> Your Financial Goals</h5>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Daily Savings Trend</h5>
-                        <canvas id="savingsChart"></canvas>
+                    <div class="goals-list" id="goalsList">
+                        <!-- Goals will be displayed here -->
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Transaction Tables -->
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Recent Transactions</h5>
-                        <div class="table-responsive">
-                            <table class="table" id="transactionsTable">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Type</th>
-                                        <th>Category</th>
-                                        <th>Description</th>
-                                        <th>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                                        </div>
-                                    </div>
-                                </div>
+    <!-- Goal Details Modal -->
+    <div class="modal fade" id="goalDetailsModal" tabindex="-1" aria-labelledby="goalDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="goalDetailsModalLabel">Goal Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="prediction-container">
+                        <div class="prediction-header">
+                            <h4>AI Prediction</h4>
+                            <div class="prediction-value" id="predictionValue">Loading...</div>
+                        </div>
+                        <div class="prediction-details">
+                            <div class="prediction-item">
+                                <span class="prediction-item-label">Expected Completion</span>
+                                <span class="prediction-item-value" id="expectedCompletion">-</span>
+                            </div>
+                            <div class="prediction-item">
+                                <span class="prediction-item-label">Success Probability</span>
+                                <span class="prediction-item-value" id="successProbability">-</span>
+                            </div>
+                            <div class="prediction-item">
+                                <span class="prediction-item-label">Recommended Savings</span>
+                                <span class="prediction-item-value" id="recommendedSavings">-</span>
+                            </div>
+                            <div class="prediction-item">
+                                <span class="prediction-item-label">Risk Level</span>
+                                <span class="prediction-item-value" id="riskLevel">-</span>
                             </div>
                         </div>
+                        <div class="progress-chart-container">
+                            <canvas id="progressChart"></canvas>
+                        </div>
                     </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Cash Expense Modal -->
+    <div class="modal fade" id="addCashExpenseModal" tabindex="-1" aria-labelledby="addCashExpenseModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCashExpenseModalLabel">Add Cash Expense</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="cashExpenseForm">
+                        <div class="mb-3">
+                            <label for="expenseAmount" class="form-label">Amount (₹)</label>
+                            <input type="number" class="form-control" id="expenseAmount" required min="0" step="0.01">
+                        </div>
+                        <div class="mb-3">
+                            <label for="expenseCategory" class="form-label">Category</label>
+                            <select class="form-control" id="expenseCategory" required>
+                                <option value="">Select a category</option>
+                                <option value="food">Food</option>
+                                <option value="transport">Transport</option>
+                                <option value="shopping">Shopping</option>
+                                <option value="bills">Bills</option>
+                                <option value="entertainment">Entertainment</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="expenseDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="expenseDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="expenseDescription" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="expenseDescription" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCashExpense()">Save Expense</button>
                 </div>
             </div>
         </div>
@@ -173,7 +699,21 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="app.js"></script>
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+
+        themeToggle.addEventListener('click', () => {
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                themeToggle.textContent = '🌙';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+            }
+        });
+    </script>
 </body>
 </html> 
