@@ -16,6 +16,7 @@ import base64
 from io import BytesIO
 import logging
 import traceback
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -339,48 +340,57 @@ def display_menu():
 
 def main():
     parser = argparse.ArgumentParser(description='Financial Analysis with LSTM')
+    parser.add_argument('--expenses', choices=['weekly', 'monthly'], help='View expenses (weekly or monthly)')
+    parser.add_argument('--savings', choices=['weekly', 'monthly'], help='View savings (weekly or monthly)')
     parser.add_argument('--projection', type=int, help='Number of months for savings projection')
     parser.add_argument('--next-month', action='store_true', help='Predict next month savings')
     parser.add_argument('--next-week', action='store_true', help='Predict next week savings')
-    parser.add_argument('--expenses', choices=['weekly', 'monthly'], help='View expenses (weekly or monthly)')
     args = parser.parse_args()
 
     analyzer = FinancialAnalyzer()
     expenses, savings = analyzer.get_processed_data()
 
-    if args.expenses:
-        analyzer.plot_expenses(expenses, 'W' if args.expenses == 'weekly' else 'ME')
-    elif args.projection:
-        analyzer.plot_savings_projection(savings, args.projection)
-    elif args.next_month:
-        analyzer.predicted_next_month_savings(savings)
-    elif args.next_week:
-        analyzer.predicted_next_week_savings(savings)
-    else:
-        while True:
-            choice = display_menu()
+    if expenses is None or savings is None:
+        print(json.dumps({"error": "No data available for analysis"}))
+        return
 
-            if choice == '1':
-                analyzer.plot_expenses(expenses, 'W')
-            elif choice == '2':
-                analyzer.plot_expenses(expenses, 'ME')
-            elif choice == '3':
-                analyzer.plot_savings(savings, 'W')
-            elif choice == '4':
-                analyzer.plot_savings(savings, 'ME')
-            elif choice == '5':
-                months = int(input("Enter number of months for projection (1-12): "))
-                months = max(1, min(12, months))
-                analyzer.plot_savings_projection(savings, months)
-            elif choice == '6':
-                analyzer.predicted_next_month_savings(savings)
-            elif choice == '7':
-                analyzer.predicted_next_week_savings(savings)
-            elif choice == '8':
-                print("Thank you for using Financial Analyzer!")
-                break
+    try:
+        if args.expenses:
+            graph_data = analyzer.plot_expenses(expenses, 'W' if args.expenses == 'weekly' else 'ME')
+            if graph_data:
+                print(json.dumps({"img": graph_data}))
             else:
-                print("Invalid choice. Please try again.")
+                print(json.dumps({"error": "Failed to generate expenses plot"}))
+        elif args.savings:
+            graph_data = analyzer.plot_savings(savings, 'W' if args.savings == 'weekly' else 'ME')
+            if graph_data:
+                print(json.dumps({"img": graph_data}))
+            else:
+                print(json.dumps({"error": "Failed to generate savings plot"}))
+        elif args.projection:
+            graph_data = analyzer.plot_savings_projection(savings, args.projection)
+            if graph_data:
+                print(json.dumps({"img": graph_data}))
+            else:
+                print(json.dumps({"error": "Failed to generate projection plot"}))
+        elif args.next_month:
+            monthly_savings = savings.resample('ME').sum()
+            if len(monthly_savings) < 2:
+                print(json.dumps({"error": "Not enough data for prediction"}))
+                return
+            avg_saving = monthly_savings.mean()
+            print(json.dumps({"message": f"By the next month, you can save: ₹{avg_saving:,.2f}"}))
+        elif args.next_week:
+            weekly_savings = savings.resample('W').sum()
+            if len(weekly_savings) < 2:
+                print(json.dumps({"error": "Not enough data for prediction"}))
+                return
+            avg_weekly_saving = weekly_savings.mean()
+            print(json.dumps({"message": f"By the next week, you can save: ₹{avg_weekly_saving:,.2f}"}))
+        else:
+            print(json.dumps({"error": "No valid analysis type specified"}))
+    except Exception as e:
+        print(json.dumps({"error": str(e)}))
 
 if __name__ == "__main__":
     main()

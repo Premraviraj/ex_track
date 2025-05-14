@@ -32,11 +32,13 @@ async function fetchGoals() {
 function calculateTotals(data) {
     if (!data || !data.upiTransactions || !data.cashTransactions) {
         console.error('Invalid data structure received');
+        document.getElementById('totalUpiExpenses').textContent = '₹0.00';
+        document.getElementById('totalCashExpenses').textContent = '₹0.00';
         return;
     }
 
-    const totalUpi = data.upiTransactions.reduce((sum, t) => sum + t.amount, 0);
-    const totalCash = data.cashTransactions.reduce((sum, t) => sum + t.amount, 0);
+    const totalUpi = data.upiTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+    const totalCash = data.cashTransactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
     document.getElementById('totalUpiExpenses').textContent = `₹${totalUpi.toFixed(2)}`;
     document.getElementById('totalCashExpenses').textContent = `₹${totalCash.toFixed(2)}`;
@@ -47,135 +49,197 @@ function displayGoals(goals) {
     const goalsList = document.getElementById('goalsList');
     if (!goalsList) return;
 
-    if (goals.length === 0) {
+    if (!Array.isArray(goals) || goals.length === 0) {
         goalsList.innerHTML = `
             <div class="empty-goals">
                 <i class="fas fa-bullseye"></i>
-                <p>No goals set yet. Click on the Financial Goals card to add your first goal!</p>
+                <p>No goals set yet. Click the + button to add a goal!</p>
             </div>
         `;
         return;
     }
 
     goalsList.innerHTML = goals.map(goal => {
-        // Ensure goal._id exists and is a string
-        const goalId = goal._id ? goal._id.toString() : '';
-        return `
-        <div class="goal-item" data-goal-id="${goalId}" onclick="showGoalDetails(this.dataset.goalId)">
-            <div class="goal-header">
-                <div class="goal-icon">
-                    <i class="fas ${getCategoryIcon(goal.goalCategory)}"></i>
-                </div>
-                <div class="goal-title-section">
-                    <h6 class="goal-title">${goal.goalName}</h6>
-                    <div class="goal-badges">
-                        <span class="goal-badge ${goal.goalType === 'rigid' ? 'badge-rigid' : 'badge-flexible'}">
-                            <i class="fas ${goal.goalType === 'rigid' ? 'fa-lock' : 'fa-unlock'}"></i>
-                            ${goal.goalType}
-                        </span>
-                        <span class="goal-badge badge-category">
-                            <i class="fas ${getCategoryIcon(goal.goalCategory)}"></i>
-                            ${goal.goalCategory}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="goal-progress">
-                <div class="progress-label">
-                    <span>Progress</span>
-                    <span class="progress-percentage">${Math.round(goal.progress)}%</span>
-                </div>
-                <div class="progress">
-                    <div class="progress-bar" role="progressbar" 
-                         style="width: ${goal.progress}%" 
-                         aria-valuenow="${goal.progress}" 
-                         aria-valuemin="0" 
-                         aria-valuemax="100">
-                    </div>
-                </div>
-            </div>
+        // Map the correct property names from the database
+        const name = goal.name || 'Unnamed Goal';
+        const category = goal.category || 'other';
+        const type = goal.type || 'flexible';
+        const targetAmount = parseFloat(goal.targetAmount) || 0;
+        const currentAmount = parseFloat(goal.currentAmount) || 0;
+        const deadline = goal.deadline ? new Date(goal.deadline).toLocaleDateString() : 'No deadline';
+        
+        // Calculate progress percentage safely
+        let progress = 0;
+        if (targetAmount > 0) {
+            progress = Math.round((currentAmount / targetAmount) * 100);
+            // Ensure progress is between 0 and 100
+            progress = Math.min(Math.max(progress, 0), 100);
+        }
+        
+        // Calculate remaining amount
+        const remainingAmount = Math.max(targetAmount - currentAmount, 0);
 
-            <div class="goal-details">
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="fas fa-rupee-sign"></i>
-                        Current Amount
+        return `
+            <div class="goal-item" data-goal-id="${goal._id}" onclick="showGoalDetails('${goal._id}')">
+                <div class="goal-header">
+                    <div class="goal-icon">
+                        <i class="fas fa-${getCategoryIcon(category)}"></i>
                     </div>
-                    <div class="detail-value detail-amount">
-                        <i class="fas fa-rupee-sign"></i>
-                        ${goal.currentAmount.toFixed(2)}
-                    </div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="fas fa-bullseye"></i>
-                        Target Amount
-                    </div>
-                    <div class="detail-value detail-amount">
-                        <i class="fas fa-rupee-sign"></i>
-                        ${goal.targetAmount.toFixed(2)}
-                    </div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="far fa-calendar-alt"></i>
-                        Target Date
-                    </div>
-                    <div class="detail-value">
-                        ${new Date(goal.targetDate).toLocaleDateString()}
+                    <div class="goal-title-section">
+                        <h5 class="goal-title">${name}</h5>
+                        <div class="goal-badges">
+                            <span class="goal-badge badge-${type}">
+                                <i class="fas fa-${type === 'rigid' ? 'lock' : 'unlock'}"></i>
+                                ${type}
+                            </span>
+                            <span class="goal-badge badge-category">
+                                <i class="fas fa-${getCategoryIcon(category)}"></i>
+                                ${category}
+                            </span>
+                        </div>
                     </div>
                 </div>
-                <div class="detail-item">
-                    <div class="detail-label">
-                        <i class="fas fa-chart-line"></i>
-                        Remaining
+                <div class="goal-progress">
+                    <div class="progress-label">
+                        <span>Progress</span>
+                        <span class="progress-percentage">${progress}%</span>
                     </div>
-                    <div class="detail-value detail-amount">
-                        <i class="fas fa-rupee-sign"></i>
-                        ${(goal.targetAmount - goal.currentAmount).toFixed(2)}
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: ${progress}%" 
+                             aria-valuenow="${progress}"
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                <div class="goal-details">
+                    <div class="detail-item">
+                        <span class="detail-label">
+                            <i class="fas fa-rupee-sign"></i>
+                            Current Amount
+                        </span>
+                        <span class="detail-value detail-amount">
+                            <i class="fas fa-rupee-sign"></i>
+                            ${currentAmount.toFixed(2)}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">
+                            <i class="fas fa-bullseye"></i>
+                            Target Amount
+                        </span>
+                        <span class="detail-value detail-amount">
+                            <i class="fas fa-rupee-sign"></i>
+                            ${targetAmount.toFixed(2)}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">
+                            <i class="far fa-calendar-alt"></i>
+                            Target Date
+                        </span>
+                        <span class="detail-value">
+                            ${deadline}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">
+                            <i class="fas fa-chart-line"></i>
+                            Remaining
+                        </span>
+                        <span class="detail-value detail-amount">
+                            <i class="fas fa-rupee-sign"></i>
+                            ${remainingAmount.toFixed(2)}
+                        </span>
                     </div>
                 </div>
             </div>
-        </div>
-    `}).join('');
+        `;
+    }).join('');
 }
 
 // Helper function to get category icon
 function getCategoryIcon(category) {
-    switch (category.toLowerCase()) {
-        case 'savings':
-            return 'fa-piggy-bank';
-        case 'investment':
-            return 'fa-chart-line';
-        case 'purchase':
-            return 'fa-shopping-cart';
-        default:
-            return 'fa-tag';
-    }
+    if (!category) return 'fa-question-circle'; // Default icon for undefined category
+    
+    const categoryIcons = {
+        'food': 'fa-utensils',
+        'transport': 'fa-car',
+        'shopping': 'fa-shopping-cart',
+        'bills': 'fa-file-invoice-dollar',
+        'entertainment': 'fa-film',
+        'health': 'fa-heartbeat',
+        'education': 'fa-graduation-cap',
+        'savings': 'fa-piggy-bank',
+        'investment': 'fa-chart-line',
+        'purchase': 'fa-shopping-bag',
+        'other': 'fa-star'
+    };
+
+    return categoryIcons[category.toLowerCase()] || 'fa-question-circle';
 }
 
 // Initialize the application
 async function init() {
-    const data = await fetchData();
-    if (data) {
+    try {
+        // Load goals from server
+        const response = await fetch('/api/goals');
+        if (!response.ok) {
+            throw new Error('Failed to fetch goals');
+        }
+        const goals = await response.json();
+        displayGoals(goals);
+
+        // Update goals count
+        const goalsCount = document.getElementById('goalsCount');
+        if (goalsCount) {
+            goalsCount.textContent = Array.isArray(goals) ? goals.length : 0;
+        }
+
+        // Load and display expenses
+        await loadExpenses();
+    } catch (error) {
+        console.error('Error initializing app:', error);
+        const goalsList = document.getElementById('goalsList');
+        if (goalsList) {
+            goalsList.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error loading data. Please try again later.
+                </div>
+            `;
+        }
+    }
+}
+
+// Function to load and display expenses
+async function loadExpenses() {
+    try {
+        const response = await fetch('http://localhost:3000/api/transactions');
+        if (!response.ok) {
+            throw new Error('Failed to fetch expenses');
+        }
+        const data = await response.json();
         calculateTotals(data);
-    } else {
-        console.error('Failed to fetch data');
+    } catch (error) {
+        console.error('Error loading expenses:', error);
+        // Set default values if fetch fails
         document.getElementById('totalUpiExpenses').textContent = '₹0.00';
         document.getElementById('totalCashExpenses').textContent = '₹0.00';
     }
-
-    // Load existing goals
-    const goals = await fetchGoals();
-    displayGoals(goals);
 }
 
-// Start the application
-init(); 
+// Start the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', init);
 
 // Financial Goals Modal
 function showFinancialGoalsModal() {
+    // Remove any existing modal before adding a new one
+    const existingModal = document.getElementById('financialGoalsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
     const modalHtml = `
         <div class="modal fade" id="financialGoalsModal" tabindex="-1">
             <div class="modal-dialog">
@@ -221,12 +285,18 @@ function showFinancialGoalsModal() {
                                 <input type="number" class="form-control" id="targetAmount" required min="0" step="0.01">
                             </div>
                             <div class="mb-3">
-                                <label for="targetDate" class="form-label">Target Date</label>
-                                <input type="date" class="form-control" id="targetDate" required>
+                                <label for="currentAmount" class="form-label">
+                                    <i class="fas fa-rupee-sign me-2"></i>
+                                    Current Amount (₹)
+                                </label>
+                                <input type="number" class="form-control" id="currentAmount" required min="0" step="0.01" placeholder="Enter your current amount">
                             </div>
                             <div class="mb-3">
-                                <label for="currentAmount" class="form-label">Current Amount (₹)</label>
-                                <input type="number" class="form-control" id="currentAmount" required min="0" step="0.01">
+                                <label for="targetDate" class="form-label">
+                                    <i class="far fa-calendar-alt me-2"></i>
+                                    Target Date
+                                </label>
+                                <input type="date" class="form-control" id="targetDate" required>
                             </div>
                         </form>
                     </div>
@@ -252,18 +322,30 @@ function showFinancialGoalsModal() {
     });
 }
 
+// Update saveFinancialGoal function to include currentMoney
 async function saveFinancialGoal() {
-    const goalName = document.getElementById('goalName').value;
-    const goalCategory = document.getElementById('goalCategory').value;
-    const goalType = document.querySelector('input[name="goalType"]:checked')?.value;
+    const name = document.getElementById('goalName').value;
+    const category = document.getElementById('goalCategory').value;
+    const type = document.querySelector('input[name="goalType"]:checked')?.value;
     const targetAmount = parseFloat(document.getElementById('targetAmount').value);
-    const targetDate = document.getElementById('targetDate').value;
+    const deadline = document.getElementById('targetDate').value;
     const currentAmount = parseFloat(document.getElementById('currentAmount').value);
     
-    if (!goalName || !goalCategory || !goalType || !targetAmount || !targetDate || !currentAmount) {
+    if (!name || !category || !type || !targetAmount || !deadline || !currentAmount) {
         alert('Please fill in all fields');
         return;
     }
+    
+    const goalData = {
+        name,
+        category,
+        type,
+        targetAmount,
+        deadline,
+        currentAmount,
+        progress: 0 // Initialize progress as 0
+    };
+    console.log('Sending goal data:', goalData);
     
     try {
         const response = await fetch('/api/goals', {
@@ -271,21 +353,17 @@ async function saveFinancialGoal() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                goalName,
-                goalCategory,
-                goalType,
-                targetAmount,
-                targetDate,
-                currentAmount
-            })
+            body: JSON.stringify(goalData)
         });
 
         if (!response.ok) {
-            throw new Error('Failed to save goal');
+            const errorText = await response.text();
+            console.error('Server error:', errorText);
+            throw new Error('Failed to save goal: ' + errorText);
         }
 
         const savedGoal = await response.json();
+        console.log('Server returned:', savedGoal);
         
         // Refresh the goals list
         const goals = await fetchGoals();
@@ -296,15 +374,24 @@ async function saveFinancialGoal() {
         modal.hide();
     } catch (error) {
         console.error('Error saving goal:', error);
-        alert('Failed to save goal. Please try again.');
+        alert('Failed to save goal. Please try again. ' + error.message);
     }
 }
 
 // Add click event listener to the goals card
 document.addEventListener('DOMContentLoaded', function() {
     const goalsCard = document.querySelector('.clickable-goal');
+    const addGoalButton = document.querySelector('.add-goal-button');
+    
     if (goalsCard) {
         goalsCard.addEventListener('click', showFinancialGoalsModal);
+    }
+    
+    if (addGoalButton) {
+        addGoalButton.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent the card click event from firing
+            showFinancialGoalsModal();
+        });
     }
 });
 
@@ -360,7 +447,7 @@ async function showGoalDetails(goalId) {
         // Fetch goal data
         let goalResponse;
         try {
-            goalResponse = await fetch(`/api/goals/${goalId}`);
+            goalResponse = await fetch(`http://localhost:3000/api/goals/${goalId}`);
             if (!goalResponse.ok) {
                 throw new Error(`Server returned ${goalResponse.status}`);
             }
@@ -377,13 +464,25 @@ async function showGoalDetails(goalId) {
             throw new Error('Invalid goal data received from server');
         }
 
+        // Use correct property names
+        const name = goal.name || 'Unnamed Goal';
+        const targetAmount = goal.targetAmount || 0;
+        const currentAmount = goal.currentAmount || 0;
+        const deadline = goal.deadline ? new Date(goal.deadline).toLocaleDateString() : 'No deadline';
+
         // Update modal title
-        modalTitle.textContent = goal.goalName;
+        modalTitle.textContent = name;
+
+        // Check if LSTM is enabled
+        const lstmEnabled = localStorage.getItem('lstmEnabled') === 'true';
+        const predictionEndpoint = lstmEnabled ? 
+            `http://localhost:3000/api/goals/${goalId}/predictions?model=lstm` :
+            `http://localhost:3000/api/goals/${goalId}/predictions`;
 
         // Fetch predictions
         let response;
         try {
-            response = await fetch(`/api/goals/${goalId}/predictions`);
+            response = await fetch(predictionEndpoint);
             if (!response.ok) {
                 throw new Error(`Server returned ${response.status}`);
             }
@@ -459,7 +558,7 @@ function createProgressChart(goal, predictions) {
     const predictedData = [];
     
     const currentDate = new Date();
-    const targetDate = new Date(goal.targetDate);
+    const targetDate = new Date(goal.deadline);
     const startDate = new Date(currentDate);
     startDate.setMonth(startDate.getMonth() - 6);
     
@@ -583,7 +682,7 @@ async function saveCashExpense() {
     }
 
     try {
-        const response = await fetch('/api/transactions/cash', {
+        const response = await fetch('http://localhost:3000/api/transactions/cash', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -604,11 +703,8 @@ async function saveCashExpense() {
         // Close modal
         addCashExpenseModal.hide();
 
-        // Refresh data
-        const data = await fetchData();
-        if (data) {
-            calculateTotals(data);
-        }
+        // Refresh expenses data
+        await loadExpenses();
 
         // Show success message
         alert('Cash expense added successfully!');

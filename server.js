@@ -39,7 +39,15 @@ const Transaction = mongoose.model('Transaction', {
 // Flexible models for exact collection names
 const UpiTransaction = mongoose.model('upi_transactions', new mongoose.Schema({}, { strict: false }), 'upi_transactions');
 const CashTransaction = mongoose.model('cash_transactions', new mongoose.Schema({}, { strict: false }), 'cash_transactions');
-const Goal = mongoose.model('goals', new mongoose.Schema({}, { strict: false }), 'goals');
+const Goal = mongoose.model('goals', new mongoose.Schema({
+    name: String,
+    category: String,
+    type: String,
+    targetAmount: Number,
+    currentAmount: Number,
+    deadline: Date,
+    progress: Number
+}), 'goals');
 
 // Add health check endpoint
 app.get('/api/health', (req, res) => {
@@ -121,7 +129,7 @@ app.get('/api/goals/:goalId/predictions', async (req, res) => {
         const goalData = {
             targetAmount: Number(goal.targetAmount),
             currentAmount: Number(goal.currentAmount),
-            targetDate: goal.targetDate instanceof Date ? goal.targetDate.toISOString().split('T')[0] : goal.targetDate
+            targetDate: goal.deadline instanceof Date ? goal.deadline.toISOString().split('T')[0] : goal.deadline
         };
 
         // Call Python script for prediction
@@ -201,20 +209,17 @@ app.get('/api/goals', async (req, res) => {
 // API endpoint to save a new goal
 app.post('/api/goals', async (req, res) => {
     try {
-        const { goalName, goalCategory, goalType, targetAmount, targetDate, currentAmount } = req.body;
-        
+        const { name, category, type, targetAmount, deadline, currentAmount } = req.body;
         const progress = (currentAmount / targetAmount) * 100;
-        
         const goal = new Goal({
-            goalName,
-            goalCategory,
-            goalType,
+            name,
+            category,
+            type,
             targetAmount,
-            targetDate,
             currentAmount,
+            deadline,
             progress
         });
-        
         await goal.save();
         res.json(goal);
     } catch (error) {
@@ -277,6 +282,101 @@ app.post('/api/transactions/cash', async (req, res) => {
     } catch (error) {
         console.error('Error saving cash transaction:', error);
         res.status(500).json({ error: 'Failed to save transaction' });
+    }
+});
+
+// LSTM Analysis API
+app.get('/api/lstm/analysis', async (req, res) => {
+    const { model = 'lstm', range = '1m' } = req.query;
+    const { spawn } = require('child_process');
+    const path = require('path');
+
+    // Map range to months for projection
+    const rangeMap = { '1m': 1, '3m': 3, '6m': 6, '1y': 12 };
+    const months = rangeMap[range] || 1;
+
+    // Call LSTM.py for savings projection
+    const pythonProcess = spawn('python3', [
+        path.join(__dirname, 'LSTM.py'),
+        '--projection', String(months)
+    ]);
+
+    let output = '';
+    let error = '';
+
+    pythonProcess.stdout.on('data', (data) => {
+        output += data.toString();
+    });
+    pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+    });
+    pythonProcess.on('close', (code) => {
+        if (code !== 0 || !output) {
+            return res.status(500).json({ error: 'LSTM analysis failed', details: error });
+        }
+        // Try to extract base64 image from output
+        const base64Match = output.match(/[A-Za-z0-9+/=]{100,}/g);
+        const base64img = base64Match ? base64Match[0] : null;
+        if (!base64img) {
+            return res.status(500).json({ error: 'No graph image returned', raw: output });
+        }
+        // Return dummy data for now for all graphs and metrics
+        res.json({
+            main: {
+                labels: [],
+                actual: [],
+                predicted: [],
+                img: base64img
+            },
+            comparison: {
+                labels: [],
+                lstm: [],
+                gru: [],
+                rnn: []
+            },
+            metrics: {
+                accuracy: 0.95,
+                mse: 0.01,
+                mae: 0.02,
+                r2: 0.9
+            }
+        });
+    });
+});
+
+// Endpoint to run LSTM.py
+app.post('/api/run-lstm', async (req, res) => {
+    try {
+        const { args } = req.body;
+        const pythonProcess = spawn('python3', ['LSTM.py', ...args]);
+        
+        let output = '';
+        let error = '';
+
+        pythonProcess.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            error += data.toString();
+        });
+
+        pythonProcess.on('close', (code) => {
+            if (code !== 0) {
+                return res.status(500).json({ error: error || 'Failed to run analysis' });
+            }
+
+            try {
+                // Try to parse the output as JSON
+                const result = JSON.parse(output);
+                res.json(result);
+            } catch (e) {
+                // If not JSON, treat as a message
+                res.json({ message: output.trim() });
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 

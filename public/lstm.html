@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSTM Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #357abd;
+            --dark-bg: #2d3436;
+            --light-text: #f5f6fa;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            height: 70px;
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-brand i {
+            font-size: 1.6rem;
+        }
+
+        .nav-buttons {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-outline-light {
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-light:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: white;
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1.2rem;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 100px;
+            justify-content: center;
+        }
+
+        .theme-toggle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle:hover::before {
+            transform: translateX(0);
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .theme-toggle:active {
+            transform: translateY(0);
+        }
+
+        .theme-toggle i {
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .theme-toggle:hover i {
+            transform: rotate(360deg);
+        }
+
+        .theme-toggle .toggle-text {
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: opacity 0.3s ease;
+        }
+
+        .theme-toggle:hover .toggle-text {
+            opacity: 0.8;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .theme-toggle.spinning i {
+            animation: spin 1s linear infinite;
+        }
+
+        .option-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .option-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            transition: transform 0.3s ease;
+        }
+
+        .option-card:hover .card-icon {
+            transform: scale(1.1);
+        }
+
+        .card-title {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-text {
+            color: #6c757d;
+        }
+
+        .results-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+
+        .results-card .card-title {
+            color: var(--primary-color);
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+
+        .page-title {
+            color: #2c3e50;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        [data-theme="dark"] {
+            background-color: var(--dark-bg);
+        }
+
+        [data-theme="dark"] .option-card,
+        [data-theme="dark"] .results-card {
+            background: #2d3436;
+        }
+
+        [data-theme="dark"] .card-title {
+            color: var(--light-text);
+        }
+
+        [data-theme="dark"] .card-text {
+            color: #a4b0be;
+        }
+
+        [data-theme="dark"] .page-title {
+            color: var(--light-text);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-chart-line"></i>
+                <span>Expense Tracker</span>
+            </a>
+            <div class="nav-buttons">
+                <a href="index.html" class="btn btn-outline-light">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                    <span class="toggle-text">Dark</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 class="page-title">Financial Analysis Options</h2>
+        <div class="row g-4">
+            <!-- Expenses Analysis -->
+            <div class="col-md-6">
+                <div class="option-card h-100" onclick="runAnalysis('expenses', 'weekly')">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-chart-line card-icon"></i>
+                        <h5 class="card-title">View Expenses (Weekly)</h5>
+                        <p class="card-text">Analyze your weekly expense patterns and trends</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="option-card h-100" onclick="runAnalysis('expenses', 'monthly')">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-chart-bar card-icon"></i>
+                        <h5 class="card-title">View Expenses (Monthly)</h5>
+                        <p class="card-text">Analyze your monthly expense trends and patterns</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Savings Analysis -->
+            <div class="col-md-6">
+                <div class="option-card h-100" onclick="runAnalysis('savings', 'weekly')">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-piggy-bank card-icon"></i>
+                        <h5 class="card-title">View Savings (Weekly)</h5>
+                        <p class="card-text">Track your weekly savings progress and goals</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="option-card h-100" onclick="runAnalysis('savings', 'monthly')">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-coins card-icon"></i>
+                        <h5 class="card-title">View Savings (Monthly)</h5>
+                        <p class="card-text">Track your monthly savings trends and progress</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projections -->
+            <div class="col-md-4">
+                <div class="option-card h-100" onclick="runAnalysis('projection')">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-chart-area card-icon"></i>
+                        <h5 class="card-title">View Savings Projection</h5>
+                        <p class="card-text">Project your future savings and financial goals</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="option-card h-100" onclick="runAnalysis('next-month')">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-calendar-alt card-icon"></i>
+                        <h5 class="card-title">Next Month Savings</h5>
+                        <p class="card-text">Predict your savings for the upcoming month</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="option-card h-100" onclick="runAnalysis('next-week')">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-calendar-week card-icon"></i>
+                        <h5 class="card-title">Next Week Savings</h5>
+                        <p class="card-text">Predict your savings for the upcoming week</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="results-card">
+                    <div class="card-body p-4">
+                        <h5 class="card-title">Analysis Results</h5>
+                        <div id="results" class="text-center py-4">
+                            <p class="text-muted">Select an option above to view analysis</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+
+        themeToggle.addEventListener('click', () => {
+            themeToggle.classList.add('spinning');
+            
+            setTimeout(() => {
+                if (body.getAttribute('data-theme') === 'dark') {
+                    body.removeAttribute('data-theme');
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i><span class="toggle-text">Dark</span>';
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    body.setAttribute('data-theme', 'dark');
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i><span class="toggle-text">Light</span>';
+                    localStorage.setItem('theme', 'dark');
+                }
+                themeToggle.classList.remove('spinning');
+            }, 500);
+        });
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i><span class="toggle-text">Light</span>';
+            }
+        });
+
+        async function runAnalysis(type, period) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="ms-3">Analyzing data...</span>
+                </div>
+            `;
+
+            try {
+                // Map the type to the correct LSTM.py argument
+                let args = [];
+                switch(type) {
+                    case 'expenses':
+                        args = ['--expenses', period];
+                        break;
+                    case 'savings':
+                        args = ['--savings', period];
+                        break;
+                    case 'projection':
+                        args = ['--projection', '3']; // Default to 3 months projection
+                        break;
+                    case 'next-month':
+                        args = ['--next-month'];
+                        break;
+                    case 'next-week':
+                        args = ['--next-week'];
+                        break;
+                }
+
+                // Call the Python script
+                const response = await fetch('/api/run-lstm', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ args: args })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Analysis failed');
+                }
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Clear previous results
+                resultsDiv.innerHTML = '';
+
+                if (data.img) {
+                    // Create a container for the graph
+                    const graphContainer = document.createElement('div');
+                    graphContainer.className = 'analysis-result';
+                    
+                    // Add title based on the type and period
+                    const title = document.createElement('h5');
+                    title.className = 'mb-3 text-center';
+                    switch(type) {
+                        case 'expenses':
+                            title.textContent = `Expense Analysis (${period.charAt(0).toUpperCase() + period.slice(1)})`;
+                            break;
+                        case 'savings':
+                            title.textContent = `Savings Analysis (${period.charAt(0).toUpperCase() + period.slice(1)})`;
+                            break;
+                        case 'projection':
+                            title.textContent = 'Savings Projection';
+                            break;
+                        case 'next-month':
+                            title.textContent = 'Next Month Savings Prediction';
+                            break;
+                        case 'next-week':
+                            title.textContent = 'Next Week Savings Prediction';
+                            break;
+                    }
+                    graphContainer.appendChild(title);
+
+                    // Add the graph image
+                    const img = document.createElement('img');
+                    img.src = `data:image/png;base64,${data.img}`;
+                    img.className = 'img-fluid rounded';
+                    img.alt = 'Analysis Result';
+                    graphContainer.appendChild(img);
+
+                    // Add success message
+                    const successMsg = document.createElement('p');
+                    successMsg.className = 'mt-3 text-success text-center';
+                    successMsg.innerHTML = '<i class="fas fa-check-circle me-2"></i>Analysis completed successfully';
+                    graphContainer.appendChild(successMsg);
+
+                    resultsDiv.appendChild(graphContainer);
+                } else if (data.message) {
+                    resultsDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            ${data.message}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html> 
