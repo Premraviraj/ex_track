@@ -216,6 +216,179 @@
         [data-theme="dark"] .page-title {
             color: var(--light-text);
         }
+
+        /* Loading Animation Styles */
+        .loading-container {
+            display: none;
+            position: relative;
+            width: 100%;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+        }
+
+        .loading-container.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-content {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-animation {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .loading-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-top-color: var(--primary-color);
+            animation: spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+            box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
+        }
+
+        .loading-circle:nth-child(2) {
+            border-top-color: transparent;
+            border-bottom-color: var(--primary-color);
+            animation: spin 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite reverse;
+        }
+
+        .loading-circle:nth-child(3) {
+            border-top-color: transparent;
+            border-left-color: var(--primary-color);
+            animation: spin 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        }
+
+        .loading-text {
+            position: absolute;
+            bottom: 0;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            font-weight: 500;
+            text-align: center;
+            width: 100%;
+            animation: pulse 1.5s ease-in-out infinite;
+            text-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+        }
+
+        .loading-dots {
+            display: inline-block;
+            position: relative;
+            width: 20px;
+            height: 20px;
+        }
+
+        .loading-dots::after {
+            content: '...';
+            position: absolute;
+            animation: dots 1.5s infinite;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        @keyframes spin {
+            0% { 
+                transform: rotate(0deg) scale(1);
+                border-width: 4px;
+            }
+            50% { 
+                transform: rotate(180deg) scale(1.1);
+                border-width: 6px;
+            }
+            100% { 
+                transform: rotate(360deg) scale(1);
+                border-width: 4px;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
+        }
+
+        /* Dark mode styles for loading */
+        [data-theme="dark"] .loading-container {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        [data-theme="dark"] .loading-text {
+            color: var(--light-text);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        [data-theme="dark"] .loading-circle {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Add a subtle gradient background to the loading container */
+        .loading-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                rgba(74, 144, 226, 0.1),
+                rgba(74, 144, 226, 0.05));
+            z-index: -1;
+        }
+
+        /* Add a subtle pulse effect to the entire loading container */
+        .loading-container.active {
+            animation: container-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes container-pulse {
+            0%, 100% { 
+                box-shadow: 0 0 20px rgba(74, 144, 226, 0.1);
+            }
+            50% { 
+                box-shadow: 0 0 30px rgba(74, 144, 226, 0.2);
+            }
+        }
+
+        /* Analysis Results Container */
+        .analysis-results {
+            position: relative;
+            margin-top: 2rem;
+        }
+
+        .analysis-results.loading .loading-container {
+            display: flex;
+        }
+
+        .analysis-results.loading .results-content {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -311,13 +484,29 @@
         </div>
 
         <!-- Results Section -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="results-card">
-                    <div class="card-body p-4">
-                        <h5 class="card-title">Analysis Results</h5>
-                        <div id="results" class="text-center py-4">
-                            <p class="text-muted">Select an option above to view analysis</p>
+        <div class="analysis-results" id="analysisResults">
+            <div class="loading-container">
+                <div class="loading-content">
+                    <div class="loading-animation">
+                        <div class="loading-circle"></div>
+                        <div class="loading-circle"></div>
+                        <div class="loading-circle"></div>
+                    </div>
+                    <div class="loading-text">
+                        Analyzing Data<span class="loading-dots">...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="results-content">
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="results-card">
+                            <div class="card-body p-4">
+                                <h5 class="card-title">Analysis Results</h5>
+                                <div id="results" class="text-center py-4">
+                                    <p class="text-muted">Select an option above to view analysis</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -357,26 +546,31 @@
             }
         });
 
-        async function runAnalysis(type, period) {
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = `
-                <div class="d-flex justify-content-center align-items-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <span class="ms-3">Analyzing data...</span>
-                </div>
-            `;
+        function showLoading() {
+            const analysisResults = document.getElementById('analysisResults');
+            if (analysisResults) {
+                analysisResults.classList.add('loading');
+            }
+        }
 
+        function hideLoading() {
+            const analysisResults = document.getElementById('analysisResults');
+            if (analysisResults) {
+                analysisResults.classList.remove('loading');
+            }
+        }
+
+        async function runAnalysis(type, range) {
+            showLoading();
             try {
                 // Map the type to the correct LSTM.py argument
                 let args = [];
                 switch(type) {
                     case 'expenses':
-                        args = ['--expenses', period];
+                        args = ['--expenses', range];
                         break;
                     case 'savings':
-                        args = ['--savings', period];
+                        args = ['--savings', range];
                         break;
                     case 'projection':
                         args = ['--projection', '3']; // Default to 3 months projection
@@ -409,6 +603,7 @@
                 }
 
                 // Clear previous results
+                const resultsDiv = document.getElementById('results');
                 resultsDiv.innerHTML = '';
 
                 if (data.img) {
@@ -421,10 +616,10 @@
                     title.className = 'mb-3 text-center';
                     switch(type) {
                         case 'expenses':
-                            title.textContent = `Expense Analysis (${period.charAt(0).toUpperCase() + period.slice(1)})`;
+                            title.textContent = `Expense Analysis (${range.charAt(0).toUpperCase() + range.slice(1)})`;
                             break;
                         case 'savings':
-                            title.textContent = `Savings Analysis (${period.charAt(0).toUpperCase() + period.slice(1)})`;
+                            title.textContent = `Savings Analysis (${range.charAt(0).toUpperCase() + range.slice(1)})`;
                             break;
                         case 'projection':
                             title.textContent = 'Savings Projection';
@@ -467,6 +662,8 @@
                         Error: ${error.message}
                     </div>
                 `;
+            } finally {
+                hideLoading();
             }
         }
     </script>

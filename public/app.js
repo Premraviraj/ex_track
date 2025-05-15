@@ -1,7 +1,28 @@
+// Add this at the top of the file
+let serverPort = 5000; // Default port
+
+// Function to detect server port
+async function detectServerPort() {
+    const ports = [5000, 5001, 5002, 5003, 5004];
+    for (const port of ports) {
+        try {
+            const response = await fetch(`http://localhost:${port}/api/health`);
+            if (response.ok) {
+                serverPort = port;
+                console.log(`Server detected on port ${port}`);
+                return port;
+            }
+        } catch (error) {
+            continue;
+        }
+    }
+    throw new Error('Could not detect server port');
+}
+
 // Fetch data from the server
 async function fetchData() {
     try {
-        const response = await fetch('http://localhost:3000/api/transactions');
+        const response = await fetch(`http://localhost:${serverPort}/api/transactions`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -16,7 +37,7 @@ async function fetchData() {
 // Fetch goals from the server
 async function fetchGoals() {
     try {
-        const response = await fetch('http://localhost:3000/api/goals');
+        const response = await fetch(`http://localhost:${serverPort}/api/goals`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -42,6 +63,27 @@ function calculateTotals(data) {
 
     document.getElementById('totalUpiExpenses').textContent = `₹${totalUpi.toFixed(2)}`;
     document.getElementById('totalCashExpenses').textContent = `₹${totalCash.toFixed(2)}`;
+}
+
+// Helper function to get category icon
+function getCategoryIcon(category) {
+    if (!category) return 'star'; // Default icon for undefined category
+    
+    const categoryIcons = {
+        'savings': 'piggy-bank',
+        'investment': 'chart-line',
+        'purchase': 'shopping-cart',
+        'food': 'utensils',
+        'transport': 'car',
+        'shopping': 'shopping-cart',
+        'bills': 'file-invoice-dollar',
+        'entertainment': 'film',
+        'health': 'heartbeat',
+        'education': 'graduation-cap',
+        'other': 'star'
+    };
+
+    return categoryIcons[category.toLowerCase()] || 'star';
 }
 
 // Display goals in the goals list
@@ -159,32 +201,12 @@ function displayGoals(goals) {
     }).join('');
 }
 
-// Helper function to get category icon
-function getCategoryIcon(category) {
-    if (!category) return 'fa-question-circle'; // Default icon for undefined category
-    
-    const categoryIcons = {
-        'food': 'fa-utensils',
-        'transport': 'fa-car',
-        'shopping': 'fa-shopping-cart',
-        'bills': 'fa-file-invoice-dollar',
-        'entertainment': 'fa-film',
-        'health': 'fa-heartbeat',
-        'education': 'fa-graduation-cap',
-        'savings': 'fa-piggy-bank',
-        'investment': 'fa-chart-line',
-        'purchase': 'fa-shopping-bag',
-        'other': 'fa-star'
-    };
-
-    return categoryIcons[category.toLowerCase()] || 'fa-question-circle';
-}
-
 // Initialize the application
 async function init() {
     try {
+        await detectServerPort();
         // Load goals from server
-        const response = await fetch('/api/goals');
+        const response = await fetch(`http://localhost:${serverPort}/api/goals`);
         if (!response.ok) {
             throw new Error('Failed to fetch goals');
         }
@@ -216,7 +238,7 @@ async function init() {
 // Function to load and display expenses
 async function loadExpenses() {
     try {
-        const response = await fetch('http://localhost:3000/api/transactions');
+        const response = await fetch(`http://localhost:${serverPort}/api/transactions`);
         if (!response.ok) {
             throw new Error('Failed to fetch expenses');
         }
@@ -348,7 +370,7 @@ async function saveFinancialGoal() {
     console.log('Sending goal data:', goalData);
     
     try {
-        const response = await fetch('/api/goals', {
+        const response = await fetch(`http://localhost:${serverPort}/api/goals`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -447,7 +469,7 @@ async function showGoalDetails(goalId) {
         // Fetch goal data
         let goalResponse;
         try {
-            goalResponse = await fetch(`http://localhost:3000/api/goals/${goalId}`);
+            goalResponse = await fetch(`http://localhost:${serverPort}/api/goals/${goalId}`);
             if (!goalResponse.ok) {
                 throw new Error(`Server returned ${goalResponse.status}`);
             }
@@ -476,8 +498,8 @@ async function showGoalDetails(goalId) {
         // Check if LSTM is enabled
         const lstmEnabled = localStorage.getItem('lstmEnabled') === 'true';
         const predictionEndpoint = lstmEnabled ? 
-            `http://localhost:3000/api/goals/${goalId}/predictions?model=lstm` :
-            `http://localhost:3000/api/goals/${goalId}/predictions`;
+            `http://localhost:${serverPort}/api/goals/${goalId}/predictions?model=lstm` :
+            `http://localhost:${serverPort}/api/goals/${goalId}/predictions`;
 
         // Fetch predictions
         let response;
@@ -682,7 +704,7 @@ async function saveCashExpense() {
     }
 
     try {
-        const response = await fetch('http://localhost:3000/api/transactions/cash', {
+        const response = await fetch(`http://localhost:${serverPort}/api/transactions/cash`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

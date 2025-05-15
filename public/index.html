@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Tracker</title>
+    <title>Money Map</map></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
@@ -33,10 +33,96 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand:hover .logo-container {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-icon {
+            font-size: 1.8rem;
+            color: #ffffff;
+            transition: all 0.5s ease;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .navbar-brand:hover .logo-icon {
+            transform: rotate(360deg) scale(1.1);
+            color: #ffffff;
+        }
+
+        .brand-text {
+            color: #ffffff;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .navbar-brand:hover .brand-text {
+            transform: scale(1.05);
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .brand-text::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #ffffff;
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .navbar-brand:hover .brand-text::after {
+            transform: scaleX(1);
+        }
+
+        @keyframes glow {
+            0% {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            }
+            50% {
+                text-shadow: 0 2px 4px rgba(255, 255, 255, 0.4);
+            }
+            100% {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            }
+        }
+
+        .brand-text {
+            animation: glow 2s infinite;
         }
 
         .navbar-brand i {
             font-size: 1.6rem;
+            transition: transform 0.5s ease;
+        }
+
+        .navbar-brand:hover i {
+            transform: rotate(360deg);
         }
 
         .nav-buttons {
@@ -874,14 +960,65 @@
         [data-theme="dark"] .summary-card:hover .card-icon-large {
             opacity: 0.1;
         }
+
+        /* Dark mode styles */
+        [data-theme="dark"] .goal-item {
+            background: #2d3436;
+        }
+
+        [data-theme="dark"] .goal-title {
+            color: #ffffff !important;
+        }
+
+        [data-theme="dark"] .goal-details {
+            background: #1a1a1a;
+        }
+
+        [data-theme="dark"] .detail-value {
+            color: #ffffff !important;
+        }
+
+        [data-theme="dark"] .detail-label {
+            color: #a4b0be !important;
+        }
+
+        [data-theme="dark"] .goal-progress {
+            background: #1a1a1a;
+        }
+
+        [data-theme="dark"] .progress-label span {
+            color: #a4b0be !important;
+        }
+
+        [data-theme="dark"] .progress-percentage {
+            color: #4a90e2 !important;
+        }
+
+        [data-theme="dark"] .progress {
+            background-color: #2d3436;
+        }
+
+        [data-theme="dark"] .goal-badge {
+            color: #ffffff !important;
+        }
+
+        [data-theme="dark"] .goal-icon {
+            background: #1a1a1a;
+        }
+
+        [data-theme="dark"] .goal-icon i {
+            color: #4a90e2;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="index.html">
-                <i class="fas fa-chart-line"></i>
-                <span>Expense Tracker</span>
+                <div class="logo-container">
+                    <i class="fas fa-chart-line logo-icon"></i>
+                    <span class="brand-text">Money Map</span>
+                </div>
             </a>
             <div class="nav-buttons">
                 <a href="lstm.html" class="btn btn-outline-light">
@@ -896,7 +1033,6 @@
     </nav>
 
     <div class="container mt-4">
-        <h2 class="page-title">Expense Tracker</h2>
         <div class="row">
             <!-- UPI Expenses Card -->
             <div class="col-md-4">
@@ -942,7 +1078,7 @@
                     <div class="card-amount">
                         <span id="goalsCount">0</span>
                         <small>active goals</small>
-                    </div>
+                        </div>
                     <button class="card-action" onclick="showFinancialGoalsModal()">
                         <i class="fas fa-plus"></i>
                     </button>
@@ -981,11 +1117,11 @@
                             <div class="prediction-item">
                                 <span class="prediction-item-label">Expected Completion</span>
                                 <span class="prediction-item-value" id="expectedCompletion">-</span>
-                            </div>
+                                </div>
                             <div class="prediction-item">
                                 <span class="prediction-item-label">Success Probability</span>
                                 <span class="prediction-item-value" id="successProbability">-</span>
-                            </div>
+                                </div>
                             <div class="prediction-item">
                                 <span class="prediction-item-label">Recommended Savings</span>
                                 <span class="prediction-item-value" id="recommendedSavings">-</span>
@@ -993,19 +1129,19 @@
                             <div class="prediction-item">
                                 <span class="prediction-item-label">Risk Level</span>
                                 <span class="prediction-item-value" id="riskLevel">-</span>
-                            </div>
-                        </div>
+                                </div>
+                                </div>
                         <div class="progress-chart-container">
                             <canvas id="progressChart"></canvas>
-                        </div>
-                    </div>
-                </div>
+                            </div>
+                                </div>
+                                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
+                            </div>
+                                </div>
+                                </div>
+                            </div>
 
     <!-- Add Cash Expense Modal -->
     <div class="modal fade" id="addCashExpenseModal" tabindex="-1" aria-labelledby="addCashExpenseModalLabel" aria-hidden="true">
@@ -1014,13 +1150,13 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="addCashExpenseModalLabel">Add Cash Expense</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
+                        </div>
                 <div class="modal-body">
                     <form id="cashExpenseForm">
                         <div class="mb-3">
                             <label for="expenseAmount" class="form-label">Amount (₹)</label>
                             <input type="number" class="form-control" id="expenseAmount" required min="0" step="0.01">
-                        </div>
+                    </div>
                         <div class="mb-3">
                             <label for="expenseCategory" class="form-label">Category</label>
                             <select class="form-control" id="expenseCategory" required>
@@ -1040,7 +1176,7 @@
                         <div class="mb-3">
                             <label for="expenseDescription" class="form-label">Description</label>
                             <input type="text" class="form-control" id="expenseDescription" required>
-                        </div>
+                    </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -1061,16 +1197,16 @@
         const body = document.body;
 
         if (themeToggle) {
-            themeToggle.addEventListener('click', () => {
+        themeToggle.addEventListener('click', () => {
                 themeToggle.classList.add('spinning');
                 
                 setTimeout(() => {
-                    if (body.getAttribute('data-theme') === 'dark') {
-                        body.removeAttribute('data-theme');
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
                         themeToggle.innerHTML = '<i class="fas fa-moon"></i><span class="toggle-text">Dark</span>';
                         localStorage.setItem('theme', 'light');
-                    } else {
-                        body.setAttribute('data-theme', 'dark');
+            } else {
+                body.setAttribute('data-theme', 'dark');
                         themeToggle.innerHTML = '<i class="fas fa-sun"></i><span class="toggle-text">Light</span>';
                         localStorage.setItem('theme', 'dark');
                     }
@@ -1125,31 +1261,33 @@
             modal.show();
         }
 
-        async function saveGoal() {
-            const goalName = document.getElementById('goalName').value;
-            const goalAmount = document.getElementById('goalAmount').value;
-            const goalDeadline = document.getElementById('goalDeadline').value;
-            const goalType = document.getElementById('goalType').value;
-            const goalCategory = document.getElementById('goalCategory').value;
+        async function saveGoal(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('goalName').value;
+            const category = document.getElementById('goalCategory').value;
+            const type = document.querySelector('input[name="goalType"]:checked')?.value;
+            const targetAmount = parseFloat(document.getElementById('targetAmount').value);
+            const deadline = document.getElementById('deadline').value;
+            const currentAmount = parseFloat(document.getElementById('currentAmount').value);
 
-            if (!goalName || !goalAmount || !goalDeadline || !goalType || !goalCategory) {
+            if (!name || !category || !type || !targetAmount || !deadline || isNaN(currentAmount)) {
                 alert('Please fill in all fields');
                 return;
             }
 
-            // Create new goal object
             const newGoal = {
-                name: goalName,
-                amount: parseFloat(goalAmount),
-                deadline: goalDeadline,
-                type: goalType,
-                category: goalCategory,
-                progress: 0
+                name,
+                category,
+                type,
+                targetAmount,
+                deadline,
+                currentAmount
             };
 
             try {
                 // Send goal to server
-                const response = await fetch('/api/goals', {
+                const response = await fetch(`http://localhost:${window.serverPort}/api/goals`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1190,7 +1328,7 @@
         async function loadGoals() {
             try {
                 // Fetch goals from server
-                const response = await fetch('/api/goals');
+                const response = await fetch(`http://localhost:${window.serverPort}/api/goals`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch goals');
                 }

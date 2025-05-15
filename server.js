@@ -348,6 +348,12 @@ app.get('/api/lstm/analysis', async (req, res) => {
 app.post('/api/run-lstm', async (req, res) => {
     try {
         const { args } = req.body;
+        if (!args || !Array.isArray(args)) {
+            return res.status(400).json({ error: 'Invalid arguments provided' });
+        }
+
+        console.log('Running LSTM analysis with args:', args);
+        
         const pythonProcess = spawn('python3', ['LSTM.py', ...args]);
         
         let output = '';
@@ -355,33 +361,71 @@ app.post('/api/run-lstm', async (req, res) => {
 
         pythonProcess.stdout.on('data', (data) => {
             output += data.toString();
+            console.log('Python stdout:', data.toString());
         });
 
         pythonProcess.stderr.on('data', (data) => {
             error += data.toString();
+            console.error('Python stderr:', data.toString());
         });
 
         pythonProcess.on('close', (code) => {
+            console.log('Python process exited with code:', code);
+            
             if (code !== 0) {
-                return res.status(500).json({ error: error || 'Failed to run analysis' });
+                console.error('LSTM analysis failed:', error);
+                return res.status(500).json({ 
+                    error: 'Analysis failed',
+                    details: error || 'Unknown error occurred'
+                });
             }
 
             try {
                 // Try to parse the output as JSON
                 const result = JSON.parse(output);
+                if (result.error) {
+                    return res.status(500).json({ 
+                        error: result.error,
+                        details: result.details || 'Analysis failed'
+                    });
+                }
                 res.json(result);
             } catch (e) {
+                console.error('Error parsing Python output:', e);
                 // If not JSON, treat as a message
                 res.json({ message: output.trim() });
             }
         });
+
+        pythonProcess.on('error', (err) => {
+            console.error('Failed to start Python process:', err);
+            res.status(500).json({ 
+                error: 'Failed to start analysis',
+                details: err.message
+            });
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Server error in LSTM endpoint:', error);
+        res.status(500).json({ 
+            error: 'Server error',
+            details: error.message
+        });
     }
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-}); 
+const startServer = (port) => {
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    }).on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.log(`Port ${port} is busy, trying ${port + 1}`);
+            startServer(port + 1);
+        } else {
+            console.error('Server error:', err);
+        }
+    });
+};
+
+const PORT = process.env.PORT || 5000;
+startServer(PORT); 

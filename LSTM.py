@@ -339,58 +339,94 @@ def display_menu():
     return input("Choose an option (1-8): ")
 
 def main():
-    parser = argparse.ArgumentParser(description='Financial Analysis with LSTM')
-    parser.add_argument('--expenses', choices=['weekly', 'monthly'], help='View expenses (weekly or monthly)')
-    parser.add_argument('--savings', choices=['weekly', 'monthly'], help='View savings (weekly or monthly)')
-    parser.add_argument('--projection', type=int, help='Number of months for savings projection')
-    parser.add_argument('--next-month', action='store_true', help='Predict next month savings')
-    parser.add_argument('--next-week', action='store_true', help='Predict next week savings')
-    args = parser.parse_args()
-
-    analyzer = FinancialAnalyzer()
-    expenses, savings = analyzer.get_processed_data()
-
-    if expenses is None or savings is None:
-        print(json.dumps({"error": "No data available for analysis"}))
-        return
-
     try:
-        if args.expenses:
-            graph_data = analyzer.plot_expenses(expenses, 'W' if args.expenses == 'weekly' else 'ME')
-            if graph_data:
-                print(json.dumps({"img": graph_data}))
+        parser = argparse.ArgumentParser(description='Financial Analysis with LSTM')
+        parser.add_argument('--expenses', choices=['weekly', 'monthly'], help='View expenses (weekly or monthly)')
+        parser.add_argument('--savings', choices=['weekly', 'monthly'], help='View savings (weekly or monthly)')
+        parser.add_argument('--projection', type=int, help='Number of months for savings projection')
+        parser.add_argument('--next-month', action='store_true', help='Predict next month savings')
+        parser.add_argument('--next-week', action='store_true', help='Predict next week savings')
+        args = parser.parse_args()
+
+        analyzer = FinancialAnalyzer()
+        expenses, savings = analyzer.get_processed_data()
+
+        if expenses is None or savings is None:
+            print(json.dumps({
+                "error": "No data available for analysis",
+                "details": "Please ensure you have transaction data in the database"
+            }))
+            return
+
+        try:
+            if args.expenses:
+                graph_data = analyzer.plot_expenses(expenses, 'W' if args.expenses == 'weekly' else 'ME')
+                if graph_data:
+                    print(json.dumps({"img": graph_data}))
+                else:
+                    print(json.dumps({
+                        "error": "Failed to generate expenses plot",
+                        "details": "Could not process expenses data"
+                    }))
+            elif args.savings:
+                graph_data = analyzer.plot_savings(savings, 'W' if args.savings == 'weekly' else 'ME')
+                if graph_data:
+                    print(json.dumps({"img": graph_data}))
+                else:
+                    print(json.dumps({
+                        "error": "Failed to generate savings plot",
+                        "details": "Could not process savings data"
+                    }))
+            elif args.projection:
+                if not isinstance(args.projection, int) or args.projection <= 0:
+                    print(json.dumps({
+                        "error": "Invalid projection period",
+                        "details": "Projection period must be a positive integer"
+                    }))
+                    return
+                graph_data = analyzer.plot_savings_projection(savings, args.projection)
+                if graph_data:
+                    print(json.dumps({"img": graph_data}))
+                else:
+                    print(json.dumps({
+                        "error": "Failed to generate projection plot",
+                        "details": "Could not generate savings projection"
+                    }))
+            elif args.next_month:
+                monthly_savings = savings.resample('ME').sum()
+                if len(monthly_savings) < 2:
+                    print(json.dumps({
+                        "error": "Not enough data for prediction",
+                        "details": "Need at least 2 months of savings data"
+                    }))
+                    return
+                avg_saving = monthly_savings.mean()
+                print(json.dumps({"message": f"By the next month, you can save: ₹{avg_saving:,.2f}"}))
+            elif args.next_week:
+                weekly_savings = savings.resample('W').sum()
+                if len(weekly_savings) < 2:
+                    print(json.dumps({
+                        "error": "Not enough data for prediction",
+                        "details": "Need at least 2 weeks of savings data"
+                    }))
+                    return
+                avg_weekly_saving = weekly_savings.mean()
+                print(json.dumps({"message": f"By the next week, you can save: ₹{avg_weekly_saving:,.2f}"}))
             else:
-                print(json.dumps({"error": "Failed to generate expenses plot"}))
-        elif args.savings:
-            graph_data = analyzer.plot_savings(savings, 'W' if args.savings == 'weekly' else 'ME')
-            if graph_data:
-                print(json.dumps({"img": graph_data}))
-            else:
-                print(json.dumps({"error": "Failed to generate savings plot"}))
-        elif args.projection:
-            graph_data = analyzer.plot_savings_projection(savings, args.projection)
-            if graph_data:
-                print(json.dumps({"img": graph_data}))
-            else:
-                print(json.dumps({"error": "Failed to generate projection plot"}))
-        elif args.next_month:
-            monthly_savings = savings.resample('ME').sum()
-            if len(monthly_savings) < 2:
-                print(json.dumps({"error": "Not enough data for prediction"}))
-                return
-            avg_saving = monthly_savings.mean()
-            print(json.dumps({"message": f"By the next month, you can save: ₹{avg_saving:,.2f}"}))
-        elif args.next_week:
-            weekly_savings = savings.resample('W').sum()
-            if len(weekly_savings) < 2:
-                print(json.dumps({"error": "Not enough data for prediction"}))
-                return
-            avg_weekly_saving = weekly_savings.mean()
-            print(json.dumps({"message": f"By the next week, you can save: ₹{avg_weekly_saving:,.2f}"}))
-        else:
-            print(json.dumps({"error": "No valid analysis type specified"}))
+                print(json.dumps({
+                    "error": "No valid analysis type specified",
+                    "details": "Please provide a valid analysis type"
+                }))
+        except Exception as e:
+            print(json.dumps({
+                "error": "Analysis failed",
+                "details": str(e)
+            }))
     except Exception as e:
-        print(json.dumps({"error": str(e)}))
+        print(json.dumps({
+            "error": "Failed to initialize analysis",
+            "details": str(e)
+        }))
 
 if __name__ == "__main__":
     main()
